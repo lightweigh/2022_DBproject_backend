@@ -6,19 +6,10 @@ from rest_framework import serializers
 
 from app01.models import *
 
-# 访客模式
-class VisitorSerializer(serializers.ModelSerializer):
-    pass
 
-
-class UserUpdateSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(read_only=True, error_messages={
-        "required": "请输入用户名",
-        "blank": "用户名不能为空"
-    })
-
+class CanteenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = Canteen
         fields = '__all__'
 
 
@@ -29,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
         fields = ("username", "password", "email")

@@ -6,63 +6,54 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.viewsets import ViewSet
 from app01.models import *
 
 from rest_framework import viewsets, status
 
+from app01.myfilter import UsersFilter
 from app01.mypage import MyPage
 from app01.permissions import IsNotAuthenticated
 from app01.serializer import *
 
 
-class GoodsView(APIView):
-
-    # pagination_class = MyPage
-    def get(self, request, *args, **kwargs):
-        goods = Canteen.objects.all()
-        goods_json = CanteenSerializer(goods, many=True)
-        print(goods_json.data)
-        return Response(goods_json.data)
-
-    def post(self, request):
-        data = request.data
-        print(data)
-        ser_data = CanteenSerializer(data=request.data)
-        if ser_data.is_valid():  # 判断数据合法性
-            goods = ser_data.save()  # 保存数据，实际上调用create
-            return Response(ser_data.data)
-        else:
-            return Response(ser_data.errors)
-
-    def put(self, request, *args, **kwargs):
-        print(request.data)
-        try:
-            goods = Canteen.objects.get(id=kwargs.get("id"))
-        except Canteen.DoesNotExist:
-            raise Http404
-        ser_data = CanteenSerializer(instance=goods, data=request.data, context={"request": request})
-        if ser_data.is_valid():
-            goods = ser_data.save()
-            return Response(ser_data.data)
-        else:
-            return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, *args, **kwargs):
-        goods = Canteen.objects.filter(id=kwargs.get("id"))
-        goods.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class UserViewSet(viewsets.ModelViewSet):
+    # permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
     # pagination_class = MyPage
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)  # 指定过滤器的配置类, 配置搜索的项
+    # filter_fields = ('username',)  # 过滤字段
+    filterset_class = UsersFilter
+    # 搜索字段
+    search_fields = ('username', 'age')
+    # 排序字段
+    ordering_fields = ('username', 'id')
+
+
+class UserView(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def get_item(self, request):
+        user = User.objects.get(id=request.user.id)
+        bs = UserSerializer(instance=user)
+        return Response(bs.data)
+
+    def edit_item(self, request):
+        instance = User.objects.get(id=request.user.id)
+        bs = UserUpdateSerializer(instance=instance, data=request.data, partial=True)
+        if bs.is_valid():
+            bs.save()
+            return Response(bs.data, status.HTTP_200_OK)
+        else:
+            return Response(bs.errors, status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(APIView):
@@ -82,7 +73,7 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    permission_classes = (IsNotAuthenticated,)
+    permission_classes = [IsNotAuthenticated, ]
 
     def post(self, request):
         print(request.data)
@@ -91,7 +82,7 @@ class LoginView(APIView):
         user = User.objects.filter(username=username)
         if user is not None:
             user = authenticate(username=username, password=password)
-            if user:    # 如果验证通过
+            if user:  # 如果验证通过
                 if user.is_active:  # 如果用户状态为激活
                     # print("登录")
                     login(request, user)

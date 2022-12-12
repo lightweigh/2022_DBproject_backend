@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework.authtoken',
+    'django_filters',
     'corsheaders',
     'rest_framework',
     'app01.apps.App01Config'
@@ -92,11 +93,15 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 
-    # # 全局配置分页选项
-    # 'DEFAULT_PAGINATION_CLASS':
-    #     'rest_framework.pagination.PageNumberPagination',
-    # 'PAGE_SIZE': 2,
+    # 全局配置分页选项
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 2,
 
+    # 过滤器的默认配置
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 
 JWT_AUTH = {
@@ -114,9 +119,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'db_hw',
         'USER': 'root',
-        'PASSWORD': 'kll1225', # 原来那个太难记了
+        'PASSWORD': 'NXGvdnjJbjJS6879', # 原来那个太难记了
+        # 'PASSWORD': 'kll1225', # 原来那个太难记了
         'HOST': '127.0.0.1',
-        'POST': 3306,  # 不要这个嘛？
+        'PORT': 3306,  # 不要这个嘛？
         'OPTIONS': {
             "init_command": "SET default_storage_engine='INNODB'"
         }

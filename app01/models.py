@@ -4,8 +4,10 @@ from django.db import models
 import os
 import uuid
 
-
 # 创建一个用户的个人文件夹
+from django.utils.datetime_safe import datetime
+
+
 def user_directory_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = '{}.{}'.format(uuid.uuid4().hex[:8], ext)
@@ -35,26 +37,6 @@ class Canteen(models.Model):
         db_table = 'backend_canteen'
 
 
-class Comment(models.Model):
-    commentId = models.AutoField(primary_key=True)
-    commentContent = models.CharField(max_length=300, verbose_name='评论内容')
-    commentDeliverTime = models.DateTimeField(verbose_name='发布时间')
-
-    def __str__(self):
-        return {'评论id': self.commentId, '评论内容': self.commentContent}
-
-    # 自定义表名
-    class Meta:
-        db_table = 'backend_comment'
-
-
-class CommentReplyComment(models.Model):
-    commentId = models.ForeignKey(Comment, verbose_name='评论id',
-                                  on_delete=models.CASCADE, related_name='crc_ci')
-    replyCommentId = models.ForeignKey(Comment, primary_key=True, verbose_name='回评id',
-                                       on_delete=models.CASCADE, related_name='crc_rci')
-
-
 class Activity(models.Model):
     activityId = models.AutoField(primary_key=True)
     activityName = models.CharField(max_length=30, verbose_name='活动名称')
@@ -72,6 +54,13 @@ class Activity(models.Model):
     # 自定义表名
     class Meta:
         db_table = 'backend_activity'
+
+
+class ActivitySlide(models.Model):
+    activity = models.ForeignKey(Activity, verbose_name='活动内容', on_delete=models.DO_NOTHING)
+    images = models.ImageField(upload_to='slide', verbose_name='轮播图片')
+    sort = models.IntegerField(default=0, verbose_name='排列顺序')
+    create_date = models.DateTimeField(default=datetime.now, verbose_name='添加时间')
 
 
 class Merchant(models.Model):
@@ -134,7 +123,7 @@ class User(AbstractUser):
     # userExpense = models.FloatField(verbose_name="用户的支出金额", default=0.0)
     userSignature = models.CharField(max_length=45, verbose_name='用户个性签名',
                                      blank=True, default='这个人很懒，什么也没留下~')
-    userNumber = models.CharField(max_length=15, verbose_name='用户学工号', unique=True)
+    # userNumber = models.CharField(max_length=15, verbose_name='用户学工号', unique=True)
     sex_choice = (
         (0, '女性'),
         (1, '男性'),
@@ -163,6 +152,29 @@ class User(AbstractUser):
     class Meta:
         db_table = 'backend_user'
 
+
+class Comment(models.Model):
+    commentId = models.AutoField(primary_key=True)
+    commentContent = models.CharField(max_length=300, verbose_name='评论内容')
+    commentDeliverTime = models.DateTimeField(default=datetime.now, verbose_name='发布时间')
+    # 用户发表的
+    user = models.ForeignKey(User, verbose_name='发表用户', on_delete=models.CASCADE, related_name='user_comment')
+
+    def __str__(self):
+        return {'评论id': self.commentId, '评论内容': self.commentContent}
+
+    # 自定义表名
+    class Meta:
+        db_table = 'backend_comment'
+
+
+class CommentReplyComment(models.Model):
+    commentId = models.ForeignKey(Comment, verbose_name='评论id',
+                                  on_delete=models.CASCADE, related_name='crc_ci')
+    replyCommentId = models.ForeignKey(Comment, primary_key=True, verbose_name='回评id',
+                                       on_delete=models.CASCADE, related_name='crc_rci')
+
+
 # 用户与评论
 class UserDeliverOrReceivedComments(models.Model):
     commentId = models.ForeignKey(Comment, primary_key=True, verbose_name='帖子id',
@@ -190,7 +202,7 @@ class Blog(models.Model):
                                       null=True)
     blogTitle = models.CharField(max_length=45, verbose_name='帖子标题')
     blogContent = models.FileField(verbose_name='帖子内容存储路径', upload_to='blogs/contents')
-    blogDeliverTime = models.DateTimeField(verbose_name='帖子发布时间')
+    blogDeliverTime = models.DateTimeField(default=datetime.now(), verbose_name='帖子发布时间')
     blogFavoriterCnt = models.IntegerField(verbose_name='帖子的收藏人数', null=True, default=0)
     blogLikeCnt = models.IntegerField(verbose_name='帖子的喜欢人数', null=True, default=0)
 
