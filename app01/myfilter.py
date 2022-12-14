@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from app01.models import User
+from app01.models import MyUser
 
 
 class UsersFilter(filters.FilterSet):
@@ -11,5 +11,5 @@ class UsersFilter(filters.FilterSet):
     min_age = filters.NumberFilter(field_name='age',lookup_expr='gte')
 
     class Meta:
-        model = User
+        model = MyUser
         fields = ('username', 'min_age', 'max_age')

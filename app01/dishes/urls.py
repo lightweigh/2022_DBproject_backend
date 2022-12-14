@@ -9,7 +9,7 @@ router = DefaultRouter()
 
 urlpatterns = [
     path("hotdishes/", DishViewSet.as_view({
-        "get": "get_all_items",  # function getSlide()
+        "get": "get_all_items",  #
     })),
     path("items/", DishViewSet.as_view({
         # "get": "get_all_items",
@@ -19,8 +19,13 @@ urlpatterns = [
     #     "get": "get_one_activity",  # function getActivityById(id)
     # })),
     path("dish/<int:pk>/", DishViewSet.as_view({
-        "get": "get_one_item",  # function getActivityById(id)
-        "put": "edit_item",
-        "delete": "delete",
+        "get": "get_one_item",  # function getDishByID(id)
+        # "put": "edit_item",
+        # "delete": "delete",
+    })),
+path("dish/<int:pk>/remark", DishViewSet.as_view({
+        "get": "getDishRemark",  # function getDishByID(id)
+        # "put": "edit_item",
+        # "delete": "delete",
     })),
 ]

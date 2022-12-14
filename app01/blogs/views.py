@@ -14,17 +14,14 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
 from app01.blogs.serializer import BlogSerializer
-from app01.models import Blog
+from app01.comments.serializer import BlogCommentSerializer
+from app01.models import Blog, MyUser, Merchant, BlogComment
 
 from rest_framework import viewsets, status
 
 from app01.mypage import MyPage
 from app01.permissions import IsNotAuthenticated
-
-
-class BlogModelViewSet(viewsets.ModelViewSet):
-    queryset = Blog.objects.all()
-    serializer_class = BlogSerializer
+from app01.views import isMyUser
 
 
 class BlogViewSet(ViewSet):
@@ -36,18 +33,41 @@ class BlogViewSet(ViewSet):
         return Response(bs.data)
 
     def add_item(self, request):
-        bs = BlogSerializer(data=request.data)
-        if bs.is_valid():
-            bs.save()
-            return Response(bs.data)
+
+        blog = Blog.objects.create(poster=request.user)
+
+        item = BlogSerializer(instance=blog, data=request.data, partial=True)
+        if item.is_valid():
+            item.save()
+            return Response(item.data)
         else:
-            return Response(bs.errors)
+            print(item.errors)
+            return Response(item.errors)
 
     def get_one_item(self, request, pk):
         print(request, pk)
         item = Blog.objects.get(blogId=pk)
         bs = BlogSerializer(instance=item)
         return Response(bs.data)
+
+    def getBlogRemark(self, request, pk):
+        items = BlogComment.objects.filter(blog_id=pk)
+        ser = BlogCommentSerializer(items, many=True)
+        return Response(ser.data)
+
+    def postBlogRemark(self, request, pk):
+        blogComment = BlogComment.objects.create(commenter=request.user, blog_id=pk)
+        item = BlogSerializer(instance=blogComment, data=request.data, partial=True)
+        if item.is_valid():
+            item.save()
+            return Response(item.data)
+        else:
+            print(item.errors)
+            return Response(item.errors)
+
+    def favoriteBlog(self, request, pk):
+
+        pass
 
     def edit_item(self, request, pk):
         instance = Blog.objects.get(blogId=pk)

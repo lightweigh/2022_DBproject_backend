@@ -15,8 +15,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
 from app01.activities.serializer import ActivitySerializer, ActivitySlideSerializer
-from app01.comments.serializer import UserActivityCommentSerializer, MerchantActivityCommentSerializer
-from app01.models import Activity, ActivitySlide, UserModel, MyUser, Merchant
+from app01.comments.serializer import BlogCommentSerializer
+from app01.models import Activity, ActivitySlide, UserModel, MyUser, BlogComment
 
 from rest_framework import viewsets, status
 
@@ -47,53 +47,28 @@ class ActivityModelViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=True, url_path='remark')
     def getActivityComments(self, request, pk):
         instance = Activity.objects.filter(activityId=pk).first()
-        comments = instance.activity_comment.all()
-        ser_comment = UserActivityCommentSerializer(instance=comments, many=True)
-        return Response(ser_comment.data)
 
-    @action(methods=['post'], detail=True, url_path='postRemark')
-    def postActivityComment(self, request, pk):
-        data = {"commentId": request.data["commentId"],
-                "commentContent": request.data["commentContent"],
-                # "commentPosterName":request.data["commentPosterName"],
-                "commentDeliverTime": request.data["commentDeliverTime"]
-                }
-        user_id = request.user.id
-        user = MyUser.objects.filter(user_ab_id=user_id)[0]
+    # get_all_items
+    # def list(self, request, *args, **kwargs):
 
-        if user:
-            data["user"] = user
-            item = UserActivityCommentSerializer(data=data)
-        else:
-            merchant = Merchant.objects.filter(user_ab_id=user_id)[0]
-            data["merchant"] = merchant
-            item = MerchantActivityCommentSerializer(data=request.data)
+    # add_item
+    # def create(self, request, *args, **kwargs):
 
-        if item.is_valid():
-            item.save()
-            return Response(item.data)
-        else:
-            return Response(item.errors)
+    # get_one_item
+    # def retrieve(self, request, *args, **kwargs):
+
+    # edit_item
+    # def update(self, request, *args, **kwargs):
+
+    # delete
+    # def destroy(self, request, *args, **kwargs):
 
 
-# get_all_items
-# def list(self, request, *args, **kwargs):
-
-# add_item
-# def create(self, request, *args, **kwargs):
-
-# get_one_item
-# def retrieve(self, request, *args, **kwargs):
-
-# edit_item
-# def update(self, request, *args, **kwargs):
-
-# delete
-# def destroy(self, request, *args, **kwargs):
 
 
-class ActivitySlideViewSet(viewsets.ModelViewSet):
-    queryset = Activity.objects.all().order_by('activityBegin')
-    serializer_class = ActivitySlideSerializer
 
-# class UserJoinInActivity(APIView):
+class BlogCommentModelViewSet(viewsets.ModelViewSet):
+    queryset = BlogComment.objects.all()
+    serializer_class = BlogCommentSerializer
+
+

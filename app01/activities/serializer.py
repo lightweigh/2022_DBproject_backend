@@ -10,5 +10,5 @@ class ActivitySerializer(serializers.ModelSerializer):
 
 class ActivitySlideSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ActivitySlide
+        model = Activity
         fields = '__all__'

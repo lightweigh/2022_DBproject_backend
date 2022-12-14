@@ -14,8 +14,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
 # from app01.dishes.models import DishesSlide
+from app01.comments.serializer import DishCommentSerializer
 from app01.dishes.serializer import DishesSerializer, DishesSlideSerializer
-from app01.models import Dish
+from app01.models import Dish, DishComment
 
 from rest_framework import viewsets, status
 
@@ -50,6 +51,25 @@ class DishViewSet(ViewSet):
         bs = DishesSerializer(instance=item)
         return Response(bs.data)
 
+    def getDishRemark(self, request, pk):
+        items = DishComment.objects.filter(dish_id=pk)
+        ser = DishCommentSerializer(items, many=True)
+        return Response(ser.data)
+
+    def postDishRemark(self, request, pk):
+        dishComment = DishComment.objects.create(commenter=request.user, blog_id=pk)
+        item = DishesSerializer(instance=dishComment, data=request.data, partial=True)
+        if item.is_valid():
+            item.save()
+            return Response(item.data)
+        else:
+            print(item.errors)
+            return Response(item.errors)
+        pass
+
+    def favoriteDish(self, request, pk):
+        pass
+
     def edit_item(self, request, pk):
         instance = Dish.objects.get(dishId=pk)
         bs = DishesSerializer(instance=instance, data=request.data)
@@ -62,7 +82,6 @@ class DishViewSet(ViewSet):
     def delete(self, request, pk):
         Dish.objects.get(dishId=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 # class DishesSlideViewSet(viewsets.ModelViewSet):
 #     queryset = DishesSlide.objects.all().order_by('sort')
