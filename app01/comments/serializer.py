@@ -19,9 +19,9 @@ class DishCommentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class UserActivityCommentSerializer(serializers.ModelSerializer):
+class ActivityCommentSerializer(serializers.ModelSerializer):
     activity = ActivitySerializer()
-    user = UserSerializer(required=False)
+    # user = UserSerializer(required=False)
 
     class Meta:
         model = ActivityComment

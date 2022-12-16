@@ -21,7 +21,7 @@ from rest_framework import viewsets, status
 
 from app01.mypage import MyPage
 from app01.permissions import IsNotAuthenticated
-from app01.views import isMyUser
+from app01.serializer import UserSerializer
 
 
 class BlogViewSet(ViewSet):
@@ -34,7 +34,7 @@ class BlogViewSet(ViewSet):
 
     def add_item(self, request):
 
-        blog = Blog.objects.create(poster=request.user)
+        blog = Blog.objects.create(user_ab=request.user)
 
         item = BlogSerializer(instance=blog, data=request.data, partial=True)
         if item.is_valid():
@@ -57,7 +57,7 @@ class BlogViewSet(ViewSet):
 
     def postBlogRemark(self, request, pk):
         blogComment = BlogComment.objects.create(commenter=request.user, blog_id=pk)
-        item = BlogSerializer(instance=blogComment, data=request.data, partial=True)
+        item = BlogCommentSerializer(instance=blogComment, data=request.data, partial=True)
         if item.is_valid():
             item.save()
             return Response(item.data)
@@ -66,8 +66,16 @@ class BlogViewSet(ViewSet):
             return Response(item.errors)
 
     def favoriteBlog(self, request, pk):
+        user = MyUser.objects.get(user_ab=request.user)
+        user.userFavoriteBlogs.add(pk)
+        # print(user.userFavoriteBlogs.all().first().blogId)
+        user.save()
+        blog = Blog.objects.get(blogId=pk)
+        blog.blogFavoriterCnt += 1
+        blog.save()
+        ser = UserSerializer(user)
 
-        pass
+        return Response(ser.data)
 
     def edit_item(self, request, pk):
         instance = Blog.objects.get(blogId=pk)

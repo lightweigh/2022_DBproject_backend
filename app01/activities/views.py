@@ -1,7 +1,3 @@
-from django.contrib import auth
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.hashers import make_password
-from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
@@ -15,13 +11,14 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
 from app01.activities.serializer import ActivitySerializer, ActivitySlideSerializer
-from app01.comments.serializer import UserActivityCommentSerializer, MerchantActivityCommentSerializer
-from app01.models import Activity, ActivitySlide, UserModel, MyUser, Merchant
+from app01.comments.serializer import ActivityCommentSerializer, MerchantActivityCommentSerializer
+from app01.models import Activity, ActivitySlide, UserModel, MyUser, Merchant, ActivityComment
 
 from rest_framework import viewsets, status
 
 from app01.mypage import MyPage
 from app01.permissions import IsNotAuthenticated
+from app01.serializer import UserSerializer
 
 
 class ActivityModelViewSet(viewsets.ModelViewSet):
@@ -30,49 +27,38 @@ class ActivityModelViewSet(viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=True, url_path='join')
     def userJoinInActivity(self, request, pk):
-        instance = Activity.objects.filter(activityId=pk).first()
+        instance = Activity.objects.get(activityId=pk)
         instance.activityPersonCnt += 1
         instance.save()
 
         user_obj = get_object_or_404(MyUser, user_ab=request.user)
-        print(user_obj)
-        user_activities = list(user_obj.userActivityId.all())
-        print(user_activities)
-        user_activities.append(instance)
-        user_obj.userActivityId.clear()
-        user_obj.userActivityId.add(*user_activities)
+        print(user_obj.user_ab)
+        user_obj.userActivities.add(pk)
         user_obj.save()
-        return Response(data={"detail": "参加成功"})
+
+        ser = UserSerializer(user_obj)
+        return Response(data=ser.data)
 
     @action(methods=['get'], detail=True, url_path='remark')
     def getActivityComments(self, request, pk):
-        instance = Activity.objects.filter(activityId=pk).first()
-        comments = instance.activity_comment.all()
-        ser_comment = UserActivityCommentSerializer(instance=comments, many=True)
+        comments = ActivityComment.objects.filter(activity_id=pk)
+        ser_comment = ActivityCommentSerializer(instance=comments, many=True)
         return Response(ser_comment.data)
 
     @action(methods=['post'], detail=True, url_path='postRemark')
     def postActivityComment(self, request, pk):
-        data = {"commentId": request.data["commentId"],
-                "commentContent": request.data["commentContent"],
-                # "commentPosterName":request.data["commentPosterName"],
-                "commentDeliverTime": request.data["commentDeliverTime"]
-                }
-        user_id = request.user.id
-        user = MyUser.objects.filter(user_ab_id=user_id)[0]
+        print(request.data)
+        comment = ActivityComment.objects.create(commenter=request.user, activity_id=pk)
+        comment.save()
 
-        if user:
-            data["user"] = user
-            item = UserActivityCommentSerializer(data=data)
-        else:
-            merchant = Merchant.objects.filter(user_ab_id=user_id)[0]
-            data["merchant"] = merchant
-            item = MerchantActivityCommentSerializer(data=request.data)
-
+        item = ActivityCommentSerializer(instance=comment, data=request.data, partial=True)
+        print("yes")
         if item.is_valid():
             item.save()
+            print("return")
             return Response(item.data)
         else:
+            print(item.errors)
             return Response(item.errors)
 
 

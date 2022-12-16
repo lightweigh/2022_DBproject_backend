@@ -41,13 +41,14 @@ class Canteen(models.Model):
 
 class Activity(models.Model):
     activityId = models.AutoField(primary_key=True)
+    user_ab = models.ForeignKey(UserModel, verbose_name='活动发起者', on_delete=models.CASCADE)
     activityName = models.CharField(max_length=30, verbose_name='活动名称')
     activityBrief = models.CharField(max_length=30, verbose_name='活动简介')
     activityContent = models.FileField(verbose_name='活动详情', upload_to=user_directory_path)
     activityHeadPhoto = models.ImageField(verbose_name='活动头图', upload_to=user_directory_path,
                                           null=True, default='default.jpg')
-    activityBegin = models.DateTimeField(verbose_name='活动开始时间')
-    activityEnd = models.DateTimeField(verbose_name='活动结束时间')
+    activityBegin = models.DateField(verbose_name='活动开始时间', auto_now_add=True)
+    activityEnd = models.DateField(verbose_name='活动结束时间', auto_now_add=True)
     activityPersonCnt = models.IntegerField(verbose_name='活动参与人数', default=0)
 
     def __str__(self):
@@ -83,10 +84,10 @@ class Merchant(models.Model):
     #                                  on_delete=models.CASCADE,
     #                                  related_name='mh')
     merchantHead = models.CharField(max_length=30, verbose_name='窗口所属食堂')
-    merchantFollowerCnt = models.IntegerField(verbose_name='收藏人数', null=True)
+    merchantFollowerCnt = models.IntegerField(verbose_name='收藏人数', default=0)
     # merchantBlogs = models.ForeignKey(Blog, related_name="blog_merchant", on_delete=models.CASCADE)  # 商家发表博客 todo 不实现？
 
-    merchantActivityId = models.ManyToManyField(Activity)
+    merchantActivities = models.ManyToManyField(Activity)
 
     def __str__(self):
         return {'窗口名称': self.merchantName}
@@ -98,20 +99,19 @@ class Merchant(models.Model):
 
 class Dish(models.Model):
     dishId = models.AutoField(primary_key=True)
-    dishSeller = models.ForeignKey(UserModel, verbose_name='销售窗口',
-                                   on_delete=models.CASCADE)  # related_name='ds')
+    user_ab = models.ForeignKey(UserModel, verbose_name='销售窗口', on_delete=models.CASCADE)  # dishSeller
     dishName = models.CharField(max_length=30, verbose_name='菜品名')
     dishPrice = models.FloatField(verbose_name='菜品价格')
     dishPicture = models.ImageField(max_length=25, verbose_name='菜品头像',
                                     null=True, default='default.jpg', upload_to=user_directory_path)
-    dishStars = models.FloatField(verbose_name='菜品评分')
+    dishStars = models.FloatField(verbose_name='菜品评分', null=True)
     dishRaw = models.CharField(verbose_name='菜品原料', max_length=50,
                                null=True, default='暂未提供原料信息')
     dishTaste = models.CharField(verbose_name='菜品口味', max_length=30,
                                  null=True, default='暂未提供口味信息')
     dishBrief = models.TextField(verbose_name='菜品简介', max_length=300,
                                  null=True, default='暂未提供菜品简介')
-    dishFollowerCnt = models.IntegerField(verbose_name='收藏人数')
+    dishFollowerCnt = models.IntegerField(verbose_name='收藏人数', default=0)
     dishAvailable = models.BooleanField(verbose_name='当日售罄',
                                         choices=[(True, '是'), (False, '否')],
                                         null=True)
@@ -126,13 +126,14 @@ class Dish(models.Model):
 
 class Blog(models.Model):
     blogId = models.AutoField(primary_key=True)
-    poster = models.ForeignKey(UserModel, verbose_name="发布者",related_name="post_blog", on_delete=models.CASCADE)  # 用户或商家发表博客
+    user_ab = models.ForeignKey(UserModel, verbose_name="发布者", related_name="post_blog",
+                               on_delete=models.CASCADE)  # 用户或商家发表博客
     blogPrivate = models.BooleanField(verbose_name='是否公开',
                                       choices=[(True, '是'), (False, '否')],
                                       null=True)
     blogTitle = models.CharField(max_length=45, verbose_name='帖子标题')
     blogContent = models.FileField(verbose_name='帖子内容存储路径', upload_to='blogs/contents')
-    blogDeliverTime = models.DateTimeField(verbose_name='帖子发布时间')
+    blogDeliverTime = models.DateTimeField(verbose_name='帖子发布时间', auto_now_add=True)
     blogFavoriterCnt = models.IntegerField(verbose_name='帖子的收藏人数', null=True, default=0)
     blogLikeCnt = models.IntegerField(verbose_name='帖子的喜欢人数', null=True, default=0)
 
@@ -251,9 +252,9 @@ class ActivityComment(models.Model):
     commentId = models.AutoField(primary_key=True)
     commenter = models.ForeignKey(UserModel, verbose_name="评论者", on_delete=models.CASCADE)  # 商家或者用户
     commentContent = models.CharField(max_length=300, verbose_name='评论内容')
-    commentDeliverTime = models.DateTimeField(verbose_name='发布时间')
-    commentSort = models.IntegerField(verbose_name='评论性质',
-                                      choices=((0, '发布'), (1, '收到')))
+    commentDeliverTime = models.DateTimeField(verbose_name='发布时间', auto_now_add=True)
+    # commentSort = models.IntegerField(verbose_name='评论性质',
+    #                                   choices=((0, '发布'), (1, '收到')))
 
     activity = models.ForeignKey(Activity, related_name="activity_comment", on_delete=models.CASCADE)
 
@@ -269,9 +270,9 @@ class BlogComment(models.Model):
     commentId = models.AutoField(primary_key=True)
     commenter = models.ForeignKey(UserModel, verbose_name="评论者", on_delete=models.CASCADE)  # 商家或者用户
     commentContent = models.CharField(max_length=300, verbose_name='评论内容')
-    commentDeliverTime = models.DateTimeField(verbose_name='发布时间')
-    commentSort = models.IntegerField(verbose_name='评论性质',
-                                      choices=((0, '发布'), (1, '收到')))
+    commentDeliverTime = models.DateTimeField(verbose_name='发布时间', auto_now_add=True)
+    # commentSort = models.IntegerField(verbose_name='评论性质',
+    #                                   choices=((0, '发布'), (1, '收到')))
 
     blog = models.ForeignKey(Blog, related_name="blog_comment", on_delete=models.CASCADE)
 
@@ -287,9 +288,9 @@ class DishComment(models.Model):
     commentId = models.AutoField(primary_key=True)
     commenter = models.ForeignKey(UserModel, verbose_name="评论者", on_delete=models.CASCADE)  # 商家或者用户
     commentContent = models.CharField(max_length=300, verbose_name='评论内容')
-    commentDeliverTime = models.DateTimeField(verbose_name='发布时间')
-    commentSort = models.IntegerField(verbose_name='评论性质',
-                                      choices=((0, '发布'), (1, '收到')))
+    commentDeliverTime = models.DateTimeField(verbose_name='发布时间', auto_now_add=True)
+    # commentSort = models.IntegerField(verbose_name='评论性质',
+    #                                   choices=((0, '发布'), (1, '收到')))
 
     dish = models.ForeignKey(Dish, related_name="dish_comment", on_delete=models.CASCADE)
 
@@ -300,6 +301,10 @@ class DishComment(models.Model):
     class Meta:
         db_table = 'backend_dish_comment'
 
+class FeedBack(models.Model):
+    # poster = models.ForeignKey(UserModel, verbose_name="发布者", on_delete=models.CASCADE)   # 匿名或实名
+    content = models.CharField(max_length=300, verbose_name="用户反馈")
+    commentDeliverTime = models.DateTimeField(verbose_name='发布时间', auto_now_add=True)
 # class CommentReplyComment(models.Model):
 #     commentId = models.ForeignKey(Comment, verbose_name='评论id',
 #                                   on_delete=models.CASCADE, related_name='crc_ci')

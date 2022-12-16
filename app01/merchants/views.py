@@ -16,8 +16,9 @@ from rest_framework.viewsets import ViewSet
 
 from rest_framework import viewsets, status
 
+from app01.activities.serializer import ActivitySerializer
 from app01.dishes.serializer import DishesSerializer
-from app01.merchants.serializer import MerchantSerializer, CanteenSerializer
+from app01.merchants.serializer import MerchantSerializer, CanteenSerializer, MerchantActivitiesSerializer
 from app01.models import Merchant, Canteen, Activity, Dish
 from app01.mypage import MyPage
 from app01.permissions import IsNotAuthenticated
@@ -32,47 +33,61 @@ class MerchantModelViewSet(viewsets.ModelViewSet):
 class MerchantViewSet(ViewSet):
 
     def getHotMerchants(self, request):
-        items = Merchant.objects.all().order_by('merchantFollowerCnt')[10]
+        # todo hot merchants
+        items = Merchant.objects.all().order_by('merchantFollowerCnt')[:10]
         bs = MerchantSerializer(instance=items, many=True)
         return Response(bs.data)
 
     def get_one_item(self, request, pk):
         print(request, pk)
         item = Merchant.objects.get(merchantId=pk)
-        bs = CanteenSerializer(instance=item)
+        bs = MerchantSerializer(instance=item)
         return Response(bs.data)
 
     def getMerchantActivities(self, request, pk):
-        merchant = Merchant.objects.filter(merchantId=pk)
-
-        activities = Activity.objects.filter(merchant=pk)
-        print(activities)
-        activities = Activity.objects.filter(merchant__merchantId=pk)
-        print(activities)
-
+        merchant = Merchant.objects.get(merchantId=pk)
+        activities = merchant.merchantActivities.all()
+        # print(activities)
+        ser = MerchantActivitiesSerializer(merchant)
+        # print(activities)
+        # activities = Activity.objects.filter(merchant__merchantId=pk)
+        # print(activities)
+        return Response(ser.data)
 
     def getMerchantDishes(self, request, pk):
-        merchant = Merchant.objects.filter(merchantId=pk)[0]
-        print(merchant)
-        dishes = Dish.objects.filter(dishSeller_id=merchant.user_ab_id)
+        merchant = Merchant.objects.get(merchantId=pk)
+        # print(merchant)
+        dishes = Dish.objects.filter(user_ab_id=merchant.user_ab_id)
         ser = DishesSerializer(dishes, many=True)
 
         return Response(ser.data)
 
+    def deleteMerchantActivity(self, request, pk):
+        # todo 返回信息？
+        merchant = Merchant.objects.get(user_ab=request.user)
+        activity = Activity.objects.get(activityId=pk)
+        if activity.launcher == request.user:
+            activity.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(data={"detail:": "wrong delete"})
+
     def deleteMerchantDish(self, request, pk):
+        # todo 返回信息？
         # check 外联
-        dish = Dish.objects.get(dishid=pk)
-        if dish.dishSeller == request.user:
+        dish = Dish.objects.get(dishId=pk)
+        print(dish.user_ab, request.user)
+        if dish.user_ab == request.user:
             dish.delete()
             ser = DishesSerializer(dish)
-            return Response(data=ser.data,status=status.HTTP_204_NO_CONTENT)
+            return Response(data=ser.data, status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response(data={"detail:":"wrong delete"})
-
+            return Response(data={"detail:": "wrong delete"})
 
     def postDish(self, request):
-        dish = Dish.objects.create(dishSeller=request.user)
-        item = DishesSerializer(instance=dish,data=request.data, partial=True)
+        print(request.data)
+        dish = Dish.objects.create(user_ab=request.user, dishPrice=request.data["dishPrice"])
+        item = DishesSerializer(instance=dish, data=request.data, partial=True)
         if item.is_valid():
             item.save()
             return Response(item.data)
@@ -81,8 +96,24 @@ class MerchantViewSet(ViewSet):
             return Response(item.errors)
 
     def postActivity(self, request):
-        # activity =
-        pass
+        print(request.data)
+        activity = Activity.objects.create(user_ab=request.user,
+                                           activityName=request.data["activityName"],
+                                           activityBrief=request.data["activityBrief"],
+                                           activityContent=request.data["activityContent"],
+                                           # activityBegin=request.data["activityBegin"],
+                                           # activityEnd=request.data["activityEnd"]    todo add back
+                                           )
+        activity.save()
+        merchant = Merchant.objects.get(user_ab=request.user)
+        merchant.merchantActivities.add(activity.activityId)
+        item = ActivitySerializer(activity, data=request.data,partial=True)
+        if item.is_valid():
+            item.save()
+            return Response(item.data)
+        else:
+            print(item.errors)
+            return Response(item.errors)
 
     # def get_all_items(self, request):
     #

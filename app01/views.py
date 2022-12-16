@@ -16,7 +16,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
+from app01.activities.serializer import ActivitySerializer
 from app01.blogs.serializer import BlogSerializer
+from app01.dishes.serializer import DishesSerializer
 from app01.models import *
 
 from rest_framework import viewsets, status
@@ -27,12 +29,6 @@ from app01.permissions import IsNotAuthenticated
 from app01.serializer import *
 
 UserModel = get_user_model()
-
-
-def isMyUser(request):
-    if MyUser.objects.filter(user_ab=request.user)[0]:
-        return True
-    return False
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -47,22 +43,6 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username', 'age')
     # 排序字段
     ordering_fields = ('username', 'id')
-
-
-class ChangePasswordView(APIView):
-    def post(self, request):
-        if request.user.check_password(request.data.get("old_password")):
-            serializer = ChangePasswordSerializer(request.user, request.data)
-            if serializer.is_valid():
-                serializer.save()
-                # Updating the password logs out all other sessions for the user
-                # except the current one.
-                update_session_auth_hash(request, request.user)
-                return Response(serializer.data, status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"detail": "旧密码不正确。"}, status.HTTP_400_BAD_REQUEST)
 
 
 class UserView(ViewSet):
@@ -86,20 +66,77 @@ class UserView(ViewSet):
         else:
             return Response(bs.errors, status.HTTP_400_BAD_REQUEST)
 
-    def getUserDish(self, request):
-        dishes = Dish.objects.filter()
-        pass
+    def changePassword(self, request):
+        if request.user.check_password(request.data.get("old_password")):
+            serializer = ChangePasswordSerializer(request.user, request.data)
+            if serializer.is_valid():
+                serializer.save()
+                # Updating the password logs out all other sessions for the user
+                # except the current one.
+                update_session_auth_hash(request, request.user)
+                print(serializer.data)  # 为空
+                return Response(serializer.data, status.HTTP_200_OK)
+            else:
+                print(serializer.errors)
+                return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"detail": "旧密码不正确"}, status.HTTP_400_BAD_REQUEST)
 
+    def getUserDish(self, request):
+        user = MyUser.objects.get(user_ab=request.user)
+        dishes = user.userFavoriteDishes.all()
+        ser = DishesSerializer(dishes, many=True)
+        return Response(ser.data)
+
+    def getUserActivity(self, request):
+        user = MyUser.objects.get(user_ab=request.user)
+        activities = user.userActivities.all()
+        ser = ActivitySerializer(activities, many=True)
+        return Response(ser.data)
+
+    def deleteUserDish(self, request, pk):
+        user = MyUser.objects.get(user_ab=request.user)
+        info = user.userFavoriteDishes.remove(pk)
+        # todo 返回值？
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def deleteUserActivity(self, request, pk):
+        user = MyUser.objects.get(user_ab=request.user)
+        info = user.userActivities.remove(pk)
+        # todo 返回值？
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def getUserBlog(self, request):
-        blogs = Blog.objects.filter(poster=request.user)
-        item = BlogSerializer(blogs)
+        blogs = Blog.objects.filter(user_ab=request.user)
+        item = BlogSerializer(blogs, many=True)
 
         return Response(item.data)
 
+    def getUserLoveBlog(self, request):
+        user = MyUser.objects.get(user_ab=request.user)
+        loveBlogs = user.userFavoriteBlogs.all()
+        ser = BlogSerializer(loveBlogs, many=True)
+        return Response(ser.data)
+
     def deleteUserBlog(self, request, pk):
+        # todo 删除的前置条件?
         Blog.objects.get(blogId=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def deleteUserLoveBlog(self, request, pk):
+        user = MyUser.objects.get(user_ab=request.user)
+        info = user.userFavoriteBlogs.remove(pk)
+        # todo 返回值？
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def submitFeedBack(self, request):
+        feedback = FeedbackSerializer(data=request.data)
+        if feedback.is_valid():
+            feedback.save()
+            return Response(feedback.data)
+        else:
+            return Response(feedback.errors)
+
 
 class MerchantRegisterView(APIView):
     permission_classes = (IsNotAuthenticated,)
@@ -113,8 +150,8 @@ class MerchantRegisterView(APIView):
         if serializer.is_valid():
             print('yes')
             user_ab = serializer.save()
-            # merchant = Merchant.objects.create(user_ab=user_ab)
-            data = {"user_ab": user_ab, "merchantName": request.data["merchantName"],
+            # merchant = Merchant.objects.create(user_ab=user_ab, isMerchant=True)
+            data = {"user_ab": user_ab.id, "merchantName": request.data["merchantName"],
                     "merchantPassword": request.data["merchantPassword"],
                     "merchantAddr": request.data["merchantAddr"],
                     "merchantOpen": request.data["merchantOpen"],
@@ -123,9 +160,9 @@ class MerchantRegisterView(APIView):
                     "isMerchant": True,
                     "merchantPhone": request.data["merchantPhone"],
                     "merchantPortrait": request.data["merchantPortrait"]}
-            merchantSerializer = MerchantSerializer(data=data)
+            merchantSerializer = MerchantRegisterSerializer(data=data)
             if merchantSerializer.is_valid():
-                print('yes')
+                print('merchantSer is valid')
                 merchantUser = merchantSerializer.save()
                 # merchantUser = Merchant.objects.create(user_ab=user, merchantName=request.data["merchantName"],
                 #                                        merchantPassword=request.data["merchantPassword"],
@@ -136,7 +173,9 @@ class MerchantRegisterView(APIView):
                 #                                        merchantPhone=request.data["merchantPhone"],
                 #                                        merchantPortrait=request.data["merchantPortrait"])
 
-                print('yes')
+                user = authenticate(username=request.data.get('merchantName'),
+                                    password=request.data.get('merchantPassword'))
+                login(request, user)
 
                 return Response(
                     data=merchantSerializer.data,

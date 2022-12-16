@@ -31,6 +31,12 @@ class MerchantSerializer(serializers.ModelSerializer):
         extra_kwargs = {"merchantId": {"read_only": True}}
 
 
+class MerchantRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Merchant
+        exclude = ['merchantActivities']
+
+
 class ChangePasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
@@ -75,13 +81,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     # user_ab = RegistrationSerializer(required=False, read_only=True)
-    user_password = serializers.SerializerMethodField(read_only=True)
+    # user_password = serializers.SerializerMethodField(read_only=True)
     # user_email = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = MyUser
-        # fields = '__all__'
-        exclude = ["userFavoriteMerchantId", "userFavoriteDishId", "userActivityId"]
+        fields = '__all__'
+        # exclude = ["userFavoriteMerchantId", "userFavoriteDishId", "userActivityId"]
 
-    def get_user_password(self, instance):
-        return instance.user_ab.password
+    # def get_user_password(self, instance):
+    #     return instance.user_ab.password
+
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeedBack
+        fields = '__all__'

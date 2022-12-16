@@ -11,21 +11,17 @@ urlpatterns = [
     path("hotdishes/", DishViewSet.as_view({
         "get": "get_all_items",  #
     })),
-    path("items/", DishViewSet.as_view({
-        # "get": "get_all_items",
-        "post": "add_item"
-    })),
-    # path("activity/<int:pk>/", ActivityViewSet.as_view({
-    #     "get": "get_one_activity",  # function getActivityById(id)
-    # })),
     path("dish/<int:pk>/", DishViewSet.as_view({
         "get": "get_one_item",  # function getDishByID(id)
-        # "put": "edit_item",
-        # "delete": "delete",
     })),
-path("dish/<int:pk>/remark", DishViewSet.as_view({
+    path("dish/<int:pk>/remark/", DishViewSet.as_view({
         "get": "getDishRemark",  # function getDishByID(id)
-        # "put": "edit_item",
-        # "delete": "delete",
+        "post": "postDishRemark",  # function getDishByID(id)
+    })),
+    # path("dish/<int:pk>/remark/", DishViewSet.as_view({
+    #     "post": "postDishRemark",  # function getDishByID(id)
+    # })),
+    path("dish/<int:pk>/favorite/", DishViewSet.as_view({
+        "post": "favoriteDish",  # function getDishByID(id)
     })),
 ]

@@ -2,7 +2,7 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
 
-from app01.blogs.views import BlogViewSet, BlogModelViewSet
+from app01.blogs.views import BlogViewSet
 
 router = DefaultRouter()
 # router.register('blog', BlogModelViewSet)
@@ -16,8 +16,8 @@ urlpatterns = [
     })),
     path("blog/<int:pk>/", BlogViewSet.as_view({
         "get": "get_one_item",  # function getBlogById(id)
-        "put": "edit_item",
-        "delete": "delete",
+        # "put": "edit_item",
+        # "delete": "delete",
     })),
     path("blog/<int:pk>/remark/", BlogViewSet.as_view({
         "get": "getBlogRemark",  # function getBlogRemark(id)

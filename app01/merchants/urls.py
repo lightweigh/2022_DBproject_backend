@@ -15,17 +15,24 @@ urlpatterns = [
     path('merchant/<int:pk>/', MerchantViewSet.as_view({
         "get": "get_one_item",  # function getMerChantByID()
     })),
+    path('merchant/<int:pk>/activities/', MerchantViewSet.as_view({
+        "get": "getMerchantActivities",  # function getMerchantActivities()
+    })),
+    path('merchant/<int:pk>/dishes/', MerchantViewSet.as_view({
+        "get": "getMerchantDishes",  # function getMerchantDishes()
+    })),
     path('merchant/1/dishes/<int:pk>/', MerchantViewSet.as_view({
         "delete": "deleteMerchantDish",  # function deleteMerchantDish()
-    })),
-    path('merchant/1/dishes/', MerchantViewSet.as_view({
-        "post": "postDish",  # function postDish()
     })),
     path('merchant/1/activity/<int:pk>/', MerchantViewSet.as_view({
         "delete": "deleteMerchantActivity",  # function deleteMerchantDish()
     })),
-    path('merchant/1/activities/', MerchantViewSet.as_view({
-        "post": "postActivity",  # function postDish()
+    # todo check modify url
+    path('merchant/dishes/', MerchantViewSet.as_view({
+        "post": "postDish",  # function postDish()
+    })),
+    path('merchant/activities/', MerchantViewSet.as_view({
+        "post": "postActivity",  # function postActivity()
     })),
 
 ]

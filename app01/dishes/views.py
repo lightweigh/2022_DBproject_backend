@@ -15,13 +15,14 @@ from rest_framework.viewsets import ViewSet
 
 # from app01.dishes.models import DishesSlide
 from app01.comments.serializer import DishCommentSerializer
-from app01.dishes.serializer import DishesSerializer, DishesSlideSerializer
-from app01.models import Dish, DishComment
+from app01.dishes.serializer import DishesSerializer
+from app01.models import Dish, DishComment, MyUser
 
 from rest_framework import viewsets, status
 
 from app01.mypage import MyPage
 from app01.permissions import IsNotAuthenticated
+from app01.serializer import UserSerializer
 
 
 class DishModelViewSet(viewsets.ModelViewSet):
@@ -32,18 +33,18 @@ class DishModelViewSet(viewsets.ModelViewSet):
 class DishViewSet(ViewSet):
 
     def get_all_items(self, request):
-
+        # todo hot dishes
         items = Dish.objects.all()
         bs = DishesSerializer(instance=items, many=True)
         return Response(bs.data)
 
-    def add_item(self, request):
-        bs = DishesSerializer(data=request.data)
-        if bs.is_valid():
-            bs.save()
-            return Response(bs.data)
-        else:
-            return Response(bs.errors)
+    # def add_item(self, request):
+    #     bs = DishesSerializer(data=request.data)
+    #     if bs.is_valid():
+    #         bs.save()
+    #         return Response(bs.data)
+    #     else:
+    #         return Response(bs.errors)
 
     def get_one_item(self, request, pk):
         print(request, pk)
@@ -57,8 +58,8 @@ class DishViewSet(ViewSet):
         return Response(ser.data)
 
     def postDishRemark(self, request, pk):
-        dishComment = DishComment.objects.create(commenter=request.user, blog_id=pk)
-        item = DishesSerializer(instance=dishComment, data=request.data, partial=True)
+        dishComment = DishComment.objects.create(commenter=request.user, dish_id=pk)
+        item = DishCommentSerializer(instance=dishComment, data=request.data, partial=True)
         if item.is_valid():
             item.save()
             return Response(item.data)
@@ -68,7 +69,14 @@ class DishViewSet(ViewSet):
         pass
 
     def favoriteDish(self, request, pk):
-        pass
+        user = MyUser.objects.get(user_ab=request.user)
+        user.userFavoriteDishes.add(pk)
+        user.save()
+        ser = UserSerializer(user)
+        dish = Dish.objects.get(dishId=pk)
+        dish.dishFollowerCnt += 1
+        dish.save()
+        return Response(ser.data)
 
     def edit_item(self, request, pk):
         instance = Dish.objects.get(dishId=pk)
