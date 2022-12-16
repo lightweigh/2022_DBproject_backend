@@ -59,6 +59,7 @@ class Activity(models.Model):
         db_table = 'backend_activity'
 
 
+# 这个模型不用管，我也不知道它是干什么用的
 class ActivitySlide(models.Model):
     activity = models.ForeignKey(Activity, verbose_name='活动内容', on_delete=models.DO_NOTHING)
     images = models.ImageField(upload_to='slide', verbose_name='轮播图片')
@@ -127,7 +128,7 @@ class Dish(models.Model):
 class Blog(models.Model):
     blogId = models.AutoField(primary_key=True)
     user_ab = models.ForeignKey(UserModel, verbose_name="发布者", related_name="post_blog",
-                               on_delete=models.CASCADE)  # 用户或商家发表博客
+                                on_delete=models.CASCADE)  # 用户或商家发表博客
     blogPrivate = models.BooleanField(verbose_name='是否公开',
                                       choices=[(True, '是'), (False, '否')],
                                       null=True)
@@ -203,7 +204,7 @@ class BlogPicture(models.Model):
 class BlogLabel(models.Model):
     blogLabelId = models.AutoField(primary_key=True)
     blogLabelContent = models.CharField(max_length=30, verbose_name='标签名称', unique=True)
-    blogId = models.ManyToManyField(Blog)
+    blogs = models.ManyToManyField(Blog)
 
     def __str__(self):
         return self.blogLabelContent
@@ -300,6 +301,7 @@ class DishComment(models.Model):
     # 自定义表名
     class Meta:
         db_table = 'backend_dish_comment'
+
 
 class FeedBack(models.Model):
     # poster = models.ForeignKey(UserModel, verbose_name="发布者", on_delete=models.CASCADE)   # 匿名或实名
